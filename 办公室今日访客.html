@@ -26,8 +26,10 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      width: 100vw;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: var(--text-main);
+      overflow: hidden;
     }
 
     .game-container {
@@ -86,7 +88,7 @@
     .content-area {
       flex: 1;
       padding: 20px;
-      overflow-y: auto;
+      overflow: hidden;
       position: relative;
     }
 
@@ -94,14 +96,13 @@
       display: none;
       flex-direction: column;
       gap: 15px;
-      min-height: 100%;
+      height: 100%;
     }
 
     .page.active {
       display: flex;
     }
 
-    /* 疗养院小店专属背景样式 */
     #page-shop {
       position: relative;
       background-size: cover;
@@ -110,20 +111,21 @@
       margin: -20px;
       padding: 20px;
       border-radius: 0;
-    }
-
-    #page-shop::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(13, 18, 29, 0.75);
-      backdrop-filter: blur(2px);
-      z-index: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden !important;
+      max-height: none !important;
     }
 
     #page-shop > * {
       position: relative;
       z-index: 1;
+    }
+
+    #page-gallery {
+      justify-content: flex-start !important;
+      overflow-y: auto !important;
     }
 
     .section-title {
@@ -143,6 +145,22 @@
       align-items: center;
       gap: 15px;
       backdrop-filter: blur(6px);
+    }
+
+    #page-shop .card {
+      background: #ffffff !important;
+      color: #121826 !important;
+      opacity: 1 !important;
+      backdrop-filter: none !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+
+    #page-shop .card span {
+      color: #334155 !important;
+    }
+
+    #page-shop .card .shop-item-icon {
+      background: #f1f5f9 !important;
     }
 
     .card.locked-card {
@@ -244,7 +262,7 @@
     }
 
     .buy-btn {
-      background: rgba(37, 99, 235, 0.6);
+      background: #2563eb;
       border: 1px solid rgba(255,255,255,0.2);
       color: #fff;
       padding: 6px 12px;
@@ -252,8 +270,8 @@
       cursor: pointer;
       font-weight: bold;
     }
-    .buy-btn:hover { background: rgba(37, 99, 235, 0.9); }
-    .buy-btn:disabled { background: rgba(255,255,255,0.1); opacity: 0.5; cursor: not-allowed; }
+    .buy-btn:hover { background: #1d4ed8; }
+    .buy-btn:disabled { background: #94a3b8; opacity: 0.6; cursor: not-allowed; }
 
     #interaction-screen {
       position: absolute;
@@ -473,7 +491,6 @@
       line-height: 1.5;
     }
 
-    /* 提示小组件样式 */
     .tips-banner {
       background: rgba(59, 130, 246, 0.1);
       border: 1px solid rgba(59, 130, 246, 0.3);
@@ -495,8 +512,7 @@
     <div class="title-text" id="header-title">博士办公室</div>
     <div class="currency-container">
       <div class="coin-icon">C</div>
-      <!-- 已将初始显示数值统一修正为 250，与下方 JS 初始化变量保持一致 -->
-      <span id="coin-count">250</span>
+      <span id="coin-count">5000</span>
     </div>
   </div>
 
@@ -504,7 +520,6 @@
     <div id="page-visitor" class="page active">
       <div class="section-title">召集干员</div>
       
-      <!-- 新增的小提示栏 -->
       <div class="tips-banner">
         <span>💡</span>
         <span><strong>小提示：</strong>干员对你产生怀疑时，记得要及时选择“否认”来降低怀疑度哦！</span>
@@ -519,12 +534,14 @@
       <div id="equipped-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
     </div>
 
-    <!-- 疗养院小店 -->
     <div id="page-shop" class="page">
-      <div class="section-title">疗养院小店</div>
-      <div id="shop-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 12px; width: 100%;">
+        <div class="section-title" style="color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">疗养院小店</div>
+        <div id="shop-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      </div>
     </div>
 
+    <!-- 档案页面：只保留干员档案列表，完全去除了小店内容 -->
     <div id="page-gallery" class="page">
       <div class="section-title">干员档案</div>
       <div id="gallery-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
@@ -575,7 +592,7 @@
       <button class="bedroom-btn" id="bedroom-btn-el" style="display: none;" onclick="moveToBedroom()">🌙 搬回卧室</button>
     </div>
 
-    <div class="main-interactive-area">
+    <div class="main-interactive-area" id="main-interactive-area-el">
       <div class="left-items-column" id="quick-items-bar"></div>
 
       <div class="right-actions-column" id="right-actions-bar">
@@ -608,7 +625,8 @@
 <script>
   const MAX_SLEEPINESS = 200;
   const COOL_DOWN_TIME = 4000;
-  const SHOP_BG_PATH = "images/shop_bg.png"; // 疗养院小店同目录背景路径
+  const SHOP_BG_PATH = "images/shop_bg.png";
+  const FAIL_CG_PATH = "images/fail_cg.png";
 
   const IMAGE_CONFIG = {
     1: {
@@ -637,8 +655,7 @@
     }
   };
 
-  let coins = 250;
-  // 默认仅解锁物品1（安眠药），物品2和物品3默认为未解锁
+  let coins = 5000;
   const inventory = [1];
 
   let sleepinessVal = 0;
@@ -661,103 +678,36 @@
     { 
       id: 1, name: "煌", avatarIcon: "🐺", desc: "精英干员。收到通知后来到了你的办公室。", locked: false,
       initialSleepiness: 0, initialSuspicion: 0, initialFavor: 90,
-      asleepQuotes: [
-        "……呼咔——……噗哈……呼噜噜……",
-        "（趴在沙发扶头上发出均匀豪爽的鼾声）",
-        "……唔……冰镇啤酒……别跑……"
-      ],
-      itemQuotes: [
-        "那边有什么东西？我怎么没看见？……",
-        "嗯？蝴蝶？哪里有蝴蝶？……"
-      ],
-      itemFailQuotes: [
-        "等一下博士，你刚才手里拿的是什么？",
-        "嗯？你动作怎么慌慌张张的？",
-        "博士，你是不是想整蛊我？",
-        "“这点小把戏可放不倒我，博士你在干嘛呢？”"
-      ],
-      suspicionFailQuotes: [
-        "博士，你这眼神……根本就是在打什么坏主意吧！",
-        "别想转移话题，你刚才的动作太可疑了！"
-      ],
+      asleepQuotes: [ "……呼咔——……噗哈……呼噜噜……", "（趴在沙发扶头上发出均匀豪爽的鼾声）", "……唔……冰镇啤酒……别跑……" ],
+      itemQuotes: [ "那边有什么东西？我怎么没看见？……", "嗯？蝴蝶？哪里有蝴蝶？……" ],
+      itemFailQuotes: [ "等一下博士，你刚才手里拿的是什么？", "嗯？你动作怎么慌慌张张的？", "博士，你是不是想整蛊我？", "“这点小把戏可放不倒我，博士你在干嘛呢？”" ],
+      suspicionFailQuotes: [ "博士,你这眼神……根本就是在打什么坏主意吧！", "别想转移话题，你刚才的动作太可疑了！" ],
       sleepStageQuotes: {
-        normal: [
-          "哟，博士！突然把我喊到办公室来有什么事？",
-          "说吧博士，这次又需要我破开哪扇墙？",
-          "办公室的沙发坐着真挺舒服的，博士你平时都在这里休息？"
-        ],
-        light: [
-          "哈啊……今天在训练室折腾太久了……博士你刚才说找我什么事来着？",
-          "唔，脑袋有点沉……博士，你办公室有热茶吗？",
-          "感觉眼皮有点打架……不过没关系，我还能坚持！"
-        ],
-        heavy: [
-          "…呼……我只是在沙发上……靠着眯一会……",
-          "博士……你的声音听起来……越来越远了……呼……",
-          "怎么突然这么困...奇怪……"
-        ]
+        normal: [ "哟，博士！突然把我喊到办公室来有什么事？", "说吧博士，这次又需要我破开哪扇墙？", "办公室的沙发坐着真挺舒服的，博士你平时都在这里休息？" ],
+        light: [ "哈啊……今天在训练室折腾太久了……博士你刚才 said 找我什么事来着？", "唔，脑袋有点沉……博士，你办公室有热茶吗？", "感觉眼皮有点打架……不过没关系，我还能坚持！" ],
+        heavy: [ "…呼……我只是在沙发上……靠着眯一会……", "博士……你的声音听起来……越来越远了……呼……", "怎么突然这么困...奇怪……" ]
       },
-      suspiciousQuotes: [
-        "……博士，你眼神看起来有点奇怪啊，是不是隐瞒了我什么事？",
-        "嗯？你说话声音怎么怪怪的……你在打什么鬼主意？",
-        "等会，你刚才手背在后面偷偷摸摸拿着什么呢？"
-      ],
+      suspiciousQuotes: [ "……博士，你眼神看起来有点奇怪啊，是不是隐瞒了我什么事？", "嗯？你说话声音怎么怪怪的……你在打什么鬼主意？", "等会，你刚才手背在后面偷偷摸摸拿着什么呢？" ],
       actions: {
         affirm: {
-          normal: [
-            "“我就知道博士和我最合得来了！”",
-            "“哈哈!博士你懂我！就按你说的办！”"
-          ],
-          light: [
-            "“嘿嘿，我就知道博士你会赞成我！”",
-            "“博士你最好了……”"
-          ],
-          heavy: [
-            "“……嗯……都听博士的……”",
-            "“……对……博士说得都对……呼……”"
-          ]
+          normal: [ "“我就知道博士和我最合得来了！”", "“哈哈!博士你懂我！就按你说的办！”" ],
+          light: [ "“嘿嘿，我就知道博士你会赞成我！”", "“博士你最好了……”" ],
+          heavy: [ "“……嗯……都听博士的……”", "“……对……博士说得都对……呼……”" ]
         },
         deny: {
-          normal: [
-            "“原来是这样！”",
-            "“既然博士都这么说了...”"
-          ],
-          light: [
-            "“嗯……你说得对，听博士的……”",
-            "“唔，也有道理……”"
-          ],
-          heavy: [
-            "“怎么感觉……脑子转不过来......”",
-            "“……听你的……我先眯会……”"
-          ]
+          normal: [ "“原来是这样！”", "“既然博士都这么说了...”" ],
+          light: [ "“嗯……你说得对，听博士的……”", "“唔，也有道理……”" ],
+          heavy: [ "“怎么感觉……脑子转不过来......”", "“……听你的……我先眯会……”" ]
         },
         tease: {
-          normal: [
-            "“博士，小心我把你拎起来！”",
-            "“下次训练场见哦，博士！”"
-          ],
-          light: [
-            "“笑什么嘛！我只是有一点点困！”",
-            "“博士越来越会开玩笑了……”"
-          ],
-          heavy: [
-            "“……坏博士……等我醒了再找你算账……”",
-            "“……怎么......没气力了……”"
-          ]
+          normal: [ "“博士，小心我把你拎起来！”", "“下次训练场见哦，博士！”" ],
+          light: [ "“笑什么嘛！我只是有一点点困！”", "“博士越来越会开玩笑了……”" ],
+          heavy: [ "“……坏博士……等我醒了再找你算账……”", "“……怎么......没气力了……”" ]
         },
         topic: {
-          normal: [
-            "“说起来，博士你这次叫我来，是为了上次外勤的事吗？”",
-            "“关于战术配置，我也正想找你聊聊呢。”"
-          ],
-          light: [
-            "“博士，你天天加班到这么晚不困吗？”",
-            "“……这个月训练场维修费没超标吧？”"
-          ],
-          heavy: [
-            "“……冰镇啤酒……博士……给我拿一瓶……”",
-            "“……加班……打卡……交给阿米娅……呼……”"
-          ]
+          normal: [ "“说起来，博士你这次叫我来，是为了上次外勤的事吗？”", "“关于战术配置，我也正想找你聊聊呢。”" ],
+          light: [ "“博士，你天天加班到这么晚不困吗？”", "“……这个月训练场维修费没超标吧？”" ],
+          heavy: [ "“……冰镇啤酒……博士……给我拿一瓶……”", "“……加班……打卡……交给阿米娅……呼……”" ]
         }
       }
     },
@@ -766,19 +716,14 @@
       initialSleepiness: 0, initialSuspicion: 50, initialFavor: 60,
       asleepQuotes: [ "……呼哧……呼哧……", "……全场八折……买一送一……别抢……" ],
       itemQuotes: [ "嗯？这是什么东西.....？", "咕嘟……博士你请我喝的水味道好奇怪啊……", "唔……好困……" ],
-      itemFailQuotes: [ 
-        "等一下！博士你刚才往空气里喷了什么东西？", 
-        "喂喂！博士你的手刚才动了一下，是不是想拿我的钱包？！", 
-        "这种劣质道具可瞒不过我的眼光！",
-        "“哼哼，想拿这种小道具糊弄工程部首席？没门！”"
-      ],
+      itemFailQuotes: [ "等一下！博士你刚才往空气里喷了什么东西？", "喂喂！博士你的手刚才动了一下，是不是想拿我的钱包？！", "这种劣质道具可瞒不过我的眼光！", "“哼哼，想拿这种小道具糊弄工程部首席？没门！”" ],
       suspicionFailQuotes: [ "博士你这表情可不像要给我批预算的样子，你想干嘛？", "你的行为很可疑哦！是不是想偷看小店的进货账单？" ],
       sleepStageQuotes: {
         normal: [ "嗨博士！今天想采购点什么？", "我带来最新的商品清单，博士你要不要先过目一下？" ],
         light: [ "博士……你刚才说要把工程部的商品全包了……是真的吧？", "呜……眼睛干涩……不过聊到生意我可就不困了哦！" ],
         heavy: [ "商品折扣……不能再低了……呼……再低就要亏本了……", "小飞艇……坏掉了……博士……打钱修理……" ]
       },
-      suspiciousQuotes: [ "等一下，博士！你这表情可不像要买东西的样子，你想干嘛？", "你的行为很可疑哦！", "喂喂！博士你的手刚才动了一下！" ],
+      suspiciousQuotes: [ "等一下，博士！你这表情可不像要买东西的样子，你想干嘛？", "你的行为很可疑哦！", "喂喂!博士你的手刚才动了一下！" ],
       actions: {
         affirm: { normal: [ "打了个响指：“不愧是博士，太有眼光了！”" ], light: [ "困倦地眯着眼笑：“嘿嘿……博士同意就好……”" ], heavy: [ "耷拉着小耳朵：“……嗯……打钱……都听博士的……”" ] },
         deny: { normal: [ "推了推眼镜：“既然博士觉得不划算，那我就按你说的改！”" ], light: [ "揉着眼睛：“唔……博士你说得有道理……”" ], heavy: [ "无精打采：“……知道了知道了……听你的改……”" ] },
@@ -791,32 +736,27 @@
       initialSleepiness: 0, initialSuspicion: 20, initialFavor: 80,
       asleepQuotes: [ "（趴在沙发上发出软绵的呼噜声）", "（小尾巴不自觉地微弱摆动了一下，沉沉睡去）" ],
       itemQuotes: [ "唔？好香的气味啊……感觉眼睛酸酸的……", "博士拿出来的是好吃的吗？咕噜……好想睡觉……", "身体变得软绵绵的……想直接趴下来……" ],
-      itemFailQuotes: [ 
-        "（警惕地竖起耳朵）博士,你的手刚才在摸什么呢？", 
-        "唔……博士刚才是不是扔了什么东西？", 
-        "博士，你是不是想偷拿我的零食！",
-        "“嘶……总感觉博士刚才的动作怪怪的，失效了吗？”"
-      ],
+      itemFailQuotes: [ "（警惕地竖起耳朵）博士,你的手刚才在摸什么呢？", "唔……博士刚才是不是扔了什么东西？", "博士，你是不是想偷拿我的零食！", "“嘶……总感觉博士刚才的动作怪怪的，失效了吗？”" ],
       suspicionFailQuotes: [ "博士你怎么怪怪的？感觉你好像在隐瞒什么危险的事情！", "直勾勾地看着我……博士肯定没安好心！" ],
       sleepStageQuotes: {
-        normal: [ "博士！你找我呀！是有好吃的还是有好玩的？", "办公室沙发好软！我可以趴在这里玩一会儿吗？" ],
+        normal: [ "博士！你找我呀！是有好吃的还是有好玩的？", "办公室沙发好软!我可以趴在这里玩一会儿吗？" ],
         light: [ "呜……坐在沙发上摇摇晃晃的，脑袋怎么忽然晕乎乎的……", "博士……我是不是太累了……眼睛有点睁不开了……" ],
         heavy: [ "不……不能睡……呼……还没帮博士整理完文件呢……", "尾巴……好沉……好想缩成一团睡一觉……" ]
       },
       suspiciousQuotes: [ "唔……博士眼神直勾勾的，是不是想趁我不注意偷拿我的零食？", "博士你怎么怪怪的？感觉你好像在隐瞒什么危险的事情！", "（警惕地竖起耳朵）博士,你的手刚才在摸什么呢？" ],
       actions: {
         affirm: { normal: [ "高兴地跳了起来：“耶！我就知道博士最好了！”" ], light: [ "眨眨大眼睛：“嘿嘿～博士真好!好想抱抱你～”" ], heavy: [ "发出一声舒服的咕噜声：“……嗯……博士最好啦……”" ] },
-        deny: { normal: [ "歪了歪头：“原来不行呀……好吧！听博士的！”" ], light: [ "揉了揉眼睛：“知道啦……听博士的话，我不闹啦……”" ], heavy: [ "困得点点头：“唔……听话……睡觉觉……”" ] },
+        deny: { normal: [ "歪了歪头：“原来不行呀……好吧！听博士的！”" ], light: [ "揉了揉眼睛：“知道啦……听博士的话,我不闹啦……" ], heavy: [ "困得点点头：“唔……听话……睡觉觉……" ] },
         tease: { normal: [ "扮了个鬼脸：“哼！看我不扑过去抓你！”" ], light: [ "揉着通红的小脸：“坏博士!笑人家坐在沙发上发呆！”" ], heavy: [ "吐了吐小舌头，哼唧着趴在沙发上睡着了." ] },
-        topic: { normal: [ "凑过来：“博士，是不是偷藏了什么好吃的零食？快拿出来！”" ], light: [ "晃晃悠悠：“聊工作?……博士,有没有小甜饼干呀……”" ], heavy: [ "梦呓着：“……追到了……大蝴蝶……嘿嘿……好大一只……”" ] }
+        topic: { normal: [ "凑过来：“博士，是不是偷藏了什么好吃的零食？快拿出来！”" ], light: [ "晃晃悠悠：“聊工作?……博士,有没有小甜饼干呀呀……”" ], heavy: [ "梦呓着：“……追到了……大蝴蝶……嘿嘿……好大一只……”" ] }
       }
     }
   ];
 
   let selectedCharId = 1;
 
-  // 动态计算当前道具成功率的算法函数 (保留原有基础+好感度-怀疑逻辑，并增加当前睡意数值的 50%，最高限制为 100%)
-  function calculateItemSuccessRate() {
+  function calculateItemSuccessRate(itemId) {
+    if (itemId === 2) return 100;
     let rate = 50 + (favorVal * 0.5) - suspicionVal + (sleepinessVal * 0.5);
     return Math.max(0, Math.min(100, Math.round(rate)));
   }
@@ -843,9 +783,7 @@
 
   function getSleepStageBadgeText(stage) {
     if (sleepinessVal >= 200) return '沉睡';
-    if (sleepinessVal >= 190) return '重度';
     if (sleepinessVal >= 160) return '重度';
-    if (sleepinessVal >= 130) return '轻度';
     if (sleepinessVal >= 100) return '轻度';
     return '普通';
   }
@@ -909,44 +847,50 @@
     renderCharacterList();
   }
 
-  // 疗养院小店商品设定
   const shopItems = [
     { id: 1, icon: '🧪', name: '安眠药', text: '后续每次交互额外+10睡意', price: 0, tickAdd: 10, suspAdd: 10 },
     { id: 2, icon: '🎯', name: '麻醉镖', text: '后续每次交互额外+30睡意', price: 500, tickAdd: 30, suspAdd: 25 },
     { id: 3, icon: '🧴', name: '不可疑的熏香', text: '后续每次交互额外+10睡意', price: 1000, tickAdd: 10, suspAdd: -30 }
   ];
 
+  // 修改点：调整 switchTab 逻辑，点击 gallery 时确保只属于档案页面，不污染背景和小店
   function switchTab(tabName, btnElement) {
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`page-${tabName}`).classList.add('active');
     btnElement.classList.add('active');
     
-    // 切换到小店或配置时刷新显示，以便同步当前的睡意加成数值
-    if (tabName === 'shop') renderShop();
-    if (tabName === 'config') renderConfig();
+    const shopPage = document.getElementById('page-shop');
+    if (tabName === 'shop') {
+      tryLoadImage(SHOP_BG_PATH, (success, path) => {
+        if (success) {
+          shopPage.style.backgroundImage = `url('${path}')`;
+        }
+      });
+      renderShop();
+    } else {
+      shopPage.style.backgroundImage = 'none';
+      if (tabName === 'config') {
+        renderConfig();
+      } else if (tabName === 'gallery') {
+        // 确保点击档案时重新渲染档案列表，不掺杂任何小店元素
+        renderCharacterList();
+      }
+    }
   }
 
   function renderShop() {
     const container = document.getElementById('shop-list');
-    const shopPage = document.getElementById('page-shop');
-    
-    tryLoadImage(SHOP_BG_PATH, (success, path) => {
-      if (success) {
-        shopPage.style.backgroundImage = `url('${path}')`;
-      }
-    });
-
     container.innerHTML = '';
     shopItems.forEach(item => {
       const isBought = inventory.includes(item.id);
       const canAfford = coins >= item.price;
-      const currentDynamicRate = calculateItemSuccessRate();
+      const currentDynamicRate = calculateItemSuccessRate(item.id);
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
         <div class="shop-item-icon">${item.icon}</div>
-        <div style="flex: 1; font-size: 13px;">${item.name} <span style="font-size:11px; color:#38bdf8;">(${currentDynamicRate}%)</span><br><span style="font-size:11px; color:var(--text-sub);">${item.text}</span></div>
+        <div style="flex: 1; font-size: 13px; color: #121826;">${item.name} <span style="font-size:11px; color:#2563eb;">(${currentDynamicRate}%)</span><br><span style="font-size:11px; color:#64748b;">${item.text}</span></div>
         <button class="buy-btn" ${isBought || !canAfford ? 'disabled' : ''} onclick="buyItem(${item.id})">
           ${isBought ? '已解锁' : `C ${item.price}`}
         </button>
@@ -976,17 +920,19 @@
     container.innerHTML = '';
     inventory.forEach(id => {
       const item = shopItems.find(x => x.id === id);
-      const currentDynamicRate = calculateItemSuccessRate();
+      const currentDynamicRate = calculateItemSuccessRate(item.id);
       container.innerHTML += `
         <div class="card">
           <div class="shop-item-icon">${item.icon}</div>
-          <div style="font-size: 13px; color: #4ade80;">[已解锁] ${item.name} <span style="font-size:11px; color:#38bdf8;">(${currentDynamicRate}%成功率)</span></div>
+          <div style="font-size: 13px; color: #16a34a;">[已解锁] ${item.name} <span style="font-size:11px; color:#2563eb;">(${currentDynamicRate}%成功率)</span></div>
         </div>
       `;
     });
   }
 
   function refreshDialogueTextForCurrentEvent() {
+    if (suspicionVal >= 100) return;
+
     const char = characters.find(c => c.id === selectedCharId);
     if (!char) return;
 
@@ -1039,6 +985,7 @@
   }
 
   function triggerCoolDown() {
+    if (suspicionVal >= 100) return;
     isCoolingDown = true;
     if (coolDownTimer) clearTimeout(coolDownTimer);
 
@@ -1072,6 +1019,9 @@
     
     resetTempBgState();
     
+    document.getElementById('main-interactive-area-el').style.display = 'flex';
+    document.getElementById('dialogue-box-el').style.display = 'block';
+
     checkSuspicionTrigger();
     updateStatusDisplay();
 
@@ -1087,10 +1037,9 @@
     const quickBar = document.getElementById('quick-items-bar');
     quickBar.innerHTML = '';
 
-    const currentDynamicRate = calculateItemSuccessRate();
-
     shopItems.forEach(item => {
       const isUnlocked = inventory.includes(item.id);
+      const currentDynamicRate = calculateItemSuccessRate(item.id);
       if (isUnlocked) {
         quickBar.innerHTML += `
           <div class="item-slot" onclick="useItem(${item.id})">
@@ -1120,6 +1069,8 @@
   }
 
   function updateBackgroundForStage(stage) {
+    if (suspicionVal >= 100) return;
+
     const charId = selectedCharId;
     const charConfig = IMAGE_CONFIG[charId];
     if (!charConfig) return;
@@ -1170,6 +1121,7 @@
   }
 
   function triggerTempBgAnimation(bgPath, duration = 3000) {
+    if (suspicionVal >= 100) return;
     if (!bgPath) return;
 
     if (tempBgTimer) {
@@ -1246,6 +1198,7 @@
   }
 
   function triggerSleepStageDialogue(isInitial = false) {
+    if (suspicionVal >= 100) return;
     if (isCoolingDown && !isInitial) return;
 
     const char = characters.find(c => c.id === selectedCharId);
@@ -1283,15 +1236,15 @@
   }
 
   function useItem(itemId) {
-    if (isCoolingDown) return;
+    if (suspicionVal >= 100 || isCoolingDown) return;
     if (!inventory.includes(itemId)) return;
 
     const char = characters.find(c => c.id === selectedCharId);
     const item = shopItems.find(x => x.id === itemId);
     if (!item || !char) return;
 
-    const currentDynamicRate = calculateItemSuccessRate();
-    const isItemSuccess = (Math.random() * 100) <= currentDynamicRate;
+    const currentDynamicRate = calculateItemSuccessRate(itemId);
+    const isItemSuccess = (itemId === 2) ? true : ((Math.random() * 100) <= currentDynamicRate);
     
     lastEvent = { type: 'item', detail: itemId, success: isItemSuccess };
 
@@ -1342,7 +1295,7 @@
   }
 
   function handleDialogue(type) {
-    if (isCoolingDown) return;
+    if (suspicionVal >= 100 || isCoolingDown) return;
 
     const char = characters.find(c => c.id === selectedCharId);
 
@@ -1449,18 +1402,37 @@
   }
 
   function checkGameState() {
-    const char = characters.find(c => c.id === selectedCharId);
     if (suspicionVal >= 100) {
-      setTimeout(() => {
-        alert(`【干员离开】${char.name}起身离开了博士办公室！`);
-        exitInteraction();
-      }, 300);
+      const screen = document.getElementById('interaction-screen');
+      
+      screen.style.backgroundColor = '#000000';
+      tryLoadImage(FAIL_CG_PATH, (success, path) => {
+        if (success) {
+          screen.style.backgroundImage = `url('${path}')`;
+        } else {
+          screen.style.backgroundImage = 'none';
+        }
+      });
+
+      document.getElementById('main-interactive-area-el').style.display = 'none';
+      
+      const dialogueBox = document.getElementById('dialogue-box-el');
+      dialogueBox.style.display = 'block';
+
+      document.getElementById('speaker-name-display').innerText = "凯尔希";
+      document.getElementById('dialogue-text').innerText = "凯尔希发现了你的阴谋。";
+
+      dialogueBox.classList.add('disabled-dialogue');
+      dialogueBox.style.cursor = 'not-allowed';
+      dialogueBox.onclick = null;
     }
   }
 
   function exitInteraction() {
     resetTempBgState();
-    document.getElementById('interaction-screen').style.display = 'none';
+    const screen = document.getElementById('interaction-screen');
+    screen.style.backgroundColor = 'transparent';
+    screen.style.display = 'none';
   }
 
   renderCharacterList();
