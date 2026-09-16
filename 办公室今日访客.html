@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>博士办公室 - 今日访客</title>
+  <style>
+    :root {
+      --bg-color: #121826;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --card-border: rgba(255, 255, 255, 0.15);
+      --text-main: #e0e6ed;
+      --text-sub: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: #0b0e14;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text-main);
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 414px;
+      height: 844px;
+      background: linear-gradient(180deg, #182032 0%, #0d121d 100%);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    .header-bar {
+      height: 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      z-index: 10;
+    }
+
+    .title-text {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
+    .currency-container {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .coin-icon {
+      width: 18px;
+      height: 18px;
+      background: #8a99ad;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: #121826;
+    }
+
+    .content-area {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .page {
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+      min-height: 100%;
+    }
+
+    .page.active {
+      display: flex;
+    }
+
+    /* 疗养院小店专属背景样式 */
+    #page-shop {
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      margin: -20px;
+      padding: 20px;
+      border-radius: 0;
+    }
+
+    #page-shop::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(13, 18, 29, 0.75);
+      backdrop-filter: blur(2px);
+      z-index: 0;
+    }
+
+    #page-shop > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 20px;
+      color: #b0c4de;
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      backdrop-filter: blur(6px);
+    }
+
+    .card.locked-card {
+      opacity: 0.5;
+    }
+
+    .char-card-selected {
+      border: 1px solid #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .visitor-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      background: #2a3547;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.1);
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 15px;
+      margin-top: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .select-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .select-btn.active {
+      background: #10b981;
+    }
+
+    .select-btn:disabled {
+      background: rgba(255,255,255,0.1);
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .navbar {
+      height: 70px;
+      background: rgba(10, 14, 22, 0.95);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .nav-btn {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      color: var(--text-sub);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .nav-btn.active {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      margin: 0 5px;
+    }
+
+    .shop-item-icon {
+      width: 45px;
+      height: 45px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .buy-btn {
+      background: rgba(37, 99, 235, 0.6);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .buy-btn:hover { background: rgba(37, 99, 235, 0.9); }
+    .buy-btn:disabled { background: rgba(255,255,255,0.1); opacity: 0.5; cursor: not-allowed; }
+
+    #interaction-screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: transparent;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 15px;
+      z-index: 100;
+      transition: background-image 0.3s ease-in-out;
+    }
+
+    .top-control-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      z-index: 10;
+    }
+
+    .back-btn {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
+
+    .bedroom-btn {
+      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .status-header {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      background: rgba(0,0,0,0.5);
+      padding: 8px;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .status-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .status-title-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #cbd5e1;
+    }
+
+    .progress-bar-bg {
+      height: 5px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .main-interactive-area {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+      z-index: 10;
+    }
+
+    .left-items-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: opacity 0.3s ease;
+    }
+
+    .item-slot {
+      width: 58px;
+      height: 58px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      position: relative;
+    }
+    .item-slot:active {
+      transform: scale(0.95);
+    }
+
+    .item-slot.locked {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .item-slot-name {
+      font-size: 8px;
+      color: #94a3b8;
+      margin-top: 1px;
+    }
+
+    .item-slot-rate {
+      font-size: 8px;
+      color: #38bdf8;
+      font-weight: bold;
+    }
+
+    .right-actions-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: opacity 0.3s ease;
+    }
+
+    .action-choice-btn {
+      width: 90px;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: opacity 0.3s ease, background 0.2s;
+    }
+    .action-choice-btn:hover { background: rgba(255, 255, 255, 0.2); }
+
+    .disabled-controls {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .dialogue-box {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 12px 15px;
+      min-height: 95px;
+      backdrop-filter: blur(10px);
+      z-index: 10;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+    }
+
+    .dialogue-box.disabled-dialogue {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .speaker-name {
+      font-size: 15px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .state-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.1);
+      color: #38bdf8;
+    }
+
+    .dialogue-text {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    /* 提示小组件样式 */
+    .tips-banner {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #93c5fd;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-container">
+
+  <div class="header-bar">
+    <div class="title-text" id="header-title">博士办公室</div>
+    <div class="currency-container">
+      <div class="coin-icon">C</div>
+      <!-- 已将初始显示数值统一修正为 250，与下方 JS 初始化变量保持一致 -->
+      <span id="coin-count">250</span>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <div id="page-visitor" class="page active">
+      <div class="section-title">召集干员</div>
+      
+      <!-- 新增的小提示栏 -->
+      <div class="tips-banner">
+        <span>💡</span>
+        <span><strong>小提示：</strong>干员对你产生怀疑时，记得要及时选择“否认”来降低怀疑度哦！</span>
+      </div>
+
+      <div id="character-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+      <button class="action-btn" onclick="startInteraction()" style="margin-top: 15px;">呼叫干员进入办公室</button>
+    </div>
+
+    <div id="page-config" class="page">
+      <div class="section-title">装备配置</div>
+      <div id="equipped-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+
+    <!-- 疗养院小店 -->
+    <div id="page-shop" class="page">
+      <div class="section-title">疗养院小店</div>
+      <div id="shop-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+
+    <div id="page-gallery" class="page">
+      <div class="section-title">干员档案</div>
+      <div id="gallery-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+  </div>
+
+  <div class="navbar">
+    <div class="nav-btn active" onclick="switchTab('visitor', this)">召集</div>
+    <div class="nav-btn" onclick="switchTab('config', this)">配置</div>
+    <div class="nav-btn" onclick="switchTab('shop', this)">小店</div>
+    <div class="nav-btn" onclick="switchTab('gallery', this)">档案</div>
+  </div>
+
+  <div id="interaction-screen">
+    <div class="top-control-bar">
+      <button class="back-btn" onclick="exitInteraction()">◀ 离开办公室</button>
+      
+      <div class="status-header">
+        <div class="status-box">
+          <div class="status-title-row">
+            <span>睡意</span>
+            <span id="val-sleepiness">0/200</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="bar-sleepiness" style="background: #3b82f6;"></div>
+          </div>
+        </div>
+        <div class="status-box">
+          <div class="status-title-row">
+            <span>怀疑</span>
+            <span id="val-suspicion">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="bar-suspicion" style="background: #ef4444;"></div>
+          </div>
+        </div>
+        <div class="status-box">
+          <div class="status-title-row">
+            <span>信赖</span>
+            <span id="val-favor">90%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="bar-favor" style="width: 90%; background: #ec4899;"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="bedroom-btn" id="bedroom-btn-el" style="display: none;" onclick="moveToBedroom()">🌙 搬回卧室</button>
+    </div>
+
+    <div class="main-interactive-area">
+      <div class="left-items-column" id="quick-items-bar"></div>
+
+      <div class="right-actions-column" id="right-actions-bar">
+        <div class="action-choice-btn" onclick="handleDialogue('affirm')">
+          <span>☑</span> 赞同
+        </div>
+        <div class="action-choice-btn" onclick="handleDialogue('deny')">
+          <span>☒</span> 否认
+        </div>
+        <div class="action-choice-btn" onclick="handleDialogue('tease')">
+          <span>☺</span> 打趣
+        </div>
+        <div class="action-choice-btn" onclick="handleDialogue('topic')">
+          <span>💬</span> 聊工作
+        </div>
+      </div>
+    </div>
+
+    <div class="dialogue-box" id="dialogue-box-el" onclick="triggerSleepStageDialogue()">
+      <div class="speaker-name">
+        <span id="speaker-name-display">角色名称</span>
+        <span class="state-badge" id="speaker-status-badge">普通</span>
+      </div>
+      <div class="dialogue-text" id="dialogue-text">……</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const MAX_SLEEPINESS = 200;
+  const COOL_DOWN_TIME = 4000;
+  const SHOP_BG_PATH = "images/shop_bg.png"; // 疗养院小店同目录背景路径
+
+  const IMAGE_CONFIG = {
+    1: {
+      avatar: "images/char_1_avatar.png",
+      stages: { normal: "images/char_1_bg_normal.png", light: "images/char_1_bg_light.png", heavy: "images/char_1_bg_heavy.png", asleep: "images/char_1_bg_asleep.png" },
+      suspicion: { low: "images/char_1_sus_low.png", high: "images/char_1_sus_high.png" },
+      items: { 1: "images/char_1_use_item_1.png", 2: "images/char_1_use_item_2.png", 3: "images/char_1_use_item_3.png" },
+      itemFails: { 1: "images/char_1_fail_item_1.png", 2: "images/char_1_fail_item_2.png", 3: "images/char_1_fail_item_3.png" },
+      actions: { affirm: "images/char_1_act_affirm.png", deny: "images/char_1_act_deny.png", tease: "images/char_1_act_tease.png", topic: "images/char_1_act_topic.png" }
+    },
+    2: {
+      avatar: "images/char_2_avatar.png",
+      stages: { normal: "images/char_2_bg_normal.png", light: "images/char_2_bg_light.png", heavy: "images/char_2_bg_heavy.png", asleep: "images/char_2_bg_asleep.png" },
+      suspicion: { low: "images/char_2_sus_low.png", high: "images/char_2_sus_high.png" },
+      items: { 1: "images/char_2_use_item_1.png", 2: "images/char_2_use_item_2.png", 3: "images/char_2_use_item_3.png" },
+      itemFails: { 1: "images/char_2_fail_item_1.png", 2: "images/char_2_fail_item_2.png", 3: "images/char_2_fail_item_3.png" },
+      actions: { affirm: "images/char_2_act_affirm.png", deny: "images/char_2_act_deny.png", tease: "images/char_2_act_tease.png", topic: "images/char_2_act_topic.png" }
+    },
+    3: {
+      avatar: "images/char_3_avatar.png",
+      stages: { normal: "images/char_3_bg_normal.png", light: "images/char_3_bg_light.png", heavy: "images/char_3_bg_heavy.png", asleep: "images/char_3_bg_asleep.png" },
+      suspicion: { low: "images/char_3_sus_low.png", high: "images/char_3_sus_high.png" },
+      items: { 1: "images/char_3_use_item_1.png", 2: "images/char_3_use_item_2.png", 3: "images/char_3_use_item_3.png" },
+      itemFails: { 1: "images/char_3_fail_item_1.png", 2: "images/char_3_fail_item_2.png", 3: "images/char_3_fail_item_3.png" },
+      actions: { affirm: "images/char_3_act_affirm.png", deny: "images/char_3_act_deny.png", tease: "images/char_3_act_tease.png", topic: "images/char_3_act_topic.png" }
+    }
+  };
+
+  let coins = 250;
+  // 默认仅解锁物品1（安眠药），物品2和物品3默认为未解锁
+  const inventory = [1];
+
+  let sleepinessVal = 0;
+  let suspicionVal = 0;
+  let favorVal = 90;
+  let isRewardClaimed = false;
+  let isSuspiciousNow = false;
+
+  let isShowingTempBg = false;
+  let tempBgTimer = null;
+  let isCoolingDown = false;
+  let coolDownTimer = null;
+
+  let lastEvent = null;
+
+  let activeSleepinessBuff = 0;
+  const stageHierarchy = ['asleep', 'heavy', 'light', 'normal'];
+
+  const characters = [
+    { 
+      id: 1, name: "煌", avatarIcon: "🐺", desc: "精英干员。收到通知后来到了你的办公室。", locked: false,
+      initialSleepiness: 0, initialSuspicion: 0, initialFavor: 90,
+      asleepQuotes: [
+        "……呼咔——……噗哈……呼噜噜……",
+        "（趴在沙发扶头上发出均匀豪爽的鼾声）",
+        "……唔……冰镇啤酒……别跑……"
+      ],
+      itemQuotes: [
+        "那边有什么东西？我怎么没看见？……",
+        "嗯？蝴蝶？哪里有蝴蝶？……"
+      ],
+      itemFailQuotes: [
+        "等一下博士，你刚才手里拿的是什么？",
+        "嗯？你动作怎么慌慌张张的？",
+        "博士，你是不是想整蛊我？",
+        "“这点小把戏可放不倒我，博士你在干嘛呢？”"
+      ],
+      suspicionFailQuotes: [
+        "博士，你这眼神……根本就是在打什么坏主意吧！",
+        "别想转移话题，你刚才的动作太可疑了！"
+      ],
+      sleepStageQuotes: {
+        normal: [
+          "哟，博士！突然把我喊到办公室来有什么事？",
+          "说吧博士，这次又需要我破开哪扇墙？",
+          "办公室的沙发坐着真挺舒服的，博士你平时都在这里休息？"
+        ],
+        light: [
+          "哈啊……今天在训练室折腾太久了……博士你刚才说找我什么事来着？",
+          "唔，脑袋有点沉……博士，你办公室有热茶吗？",
+          "感觉眼皮有点打架……不过没关系，我还能坚持！"
+        ],
+        heavy: [
+          "…呼……我只是在沙发上……靠着眯一会……",
+          "博士……你的声音听起来……越来越远了……呼……",
+          "怎么突然这么困...奇怪……"
+        ]
+      },
+      suspiciousQuotes: [
+        "……博士，你眼神看起来有点奇怪啊，是不是隐瞒了我什么事？",
+        "嗯？你说话声音怎么怪怪的……你在打什么鬼主意？",
+        "等会，你刚才手背在后面偷偷摸摸拿着什么呢？"
+      ],
+      actions: {
+        affirm: {
+          normal: [
+            "“我就知道博士和我最合得来了！”",
+            "“哈哈!博士你懂我！就按你说的办！”"
+          ],
+          light: [
+            "“嘿嘿，我就知道博士你会赞成我！”",
+            "“博士你最好了……”"
+          ],
+          heavy: [
+            "“……嗯……都听博士的……”",
+            "“……对……博士说得都对……呼……”"
+          ]
+        },
+        deny: {
+          normal: [
+            "“原来是这样！”",
+            "“既然博士都这么说了...”"
+          ],
+          light: [
+            "“嗯……你说得对，听博士的……”",
+            "“唔，也有道理……”"
+          ],
+          heavy: [
+            "“怎么感觉……脑子转不过来......”",
+            "“……听你的……我先眯会……”"
+          ]
+        },
+        tease: {
+          normal: [
+            "“博士，小心我把你拎起来！”",
+            "“下次训练场见哦，博士！”"
+          ],
+          light: [
+            "“笑什么嘛！我只是有一点点困！”",
+            "“博士越来越会开玩笑了……”"
+          ],
+          heavy: [
+            "“……坏博士……等我醒了再找你算账……”",
+            "“……怎么......没气力了……”"
+          ]
+        },
+        topic: {
+          normal: [
+            "“说起来，博士你这次叫我来，是为了上次外勤的事吗？”",
+            "“关于战术配置，我也正想找你聊聊呢。”"
+          ],
+          light: [
+            "“博士，你天天加班到这么晚不困吗？”",
+            "“……这个月训练场维修费没超标吧？”"
+          ],
+          heavy: [
+            "“……冰镇啤酒……博士……给我拿一瓶……”",
+            "“……加班……打卡……交给阿米娅……呼……”"
+          ]
+        }
+      }
+    },
+    {
+      id: 2, name: "可露希尔", avatarIcon: "🦇", desc: "工程部负责人。收到通知后来到了你的办公室。", locked: false,
+      initialSleepiness: 0, initialSuspicion: 50, initialFavor: 60,
+      asleepQuotes: [ "……呼哧……呼哧……", "……全场八折……买一送一……别抢……" ],
+      itemQuotes: [ "嗯？这是什么东西.....？", "咕嘟……博士你请我喝的水味道好奇怪啊……", "唔……好困……" ],
+      itemFailQuotes: [ 
+        "等一下！博士你刚才往空气里喷了什么东西？", 
+        "喂喂！博士你的手刚才动了一下，是不是想拿我的钱包？！", 
+        "这种劣质道具可瞒不过我的眼光！",
+        "“哼哼，想拿这种小道具糊弄工程部首席？没门！”"
+      ],
+      suspicionFailQuotes: [ "博士你这表情可不像要给我批预算的样子，你想干嘛？", "你的行为很可疑哦！是不是想偷看小店的进货账单？" ],
+      sleepStageQuotes: {
+        normal: [ "嗨博士！今天想采购点什么？", "我带来最新的商品清单，博士你要不要先过目一下？" ],
+        light: [ "博士……你刚才说要把工程部的商品全包了……是真的吧？", "呜……眼睛干涩……不过聊到生意我可就不困了哦！" ],
+        heavy: [ "商品折扣……不能再低了……呼……再低就要亏本了……", "小飞艇……坏掉了……博士……打钱修理……" ]
+      },
+      suspiciousQuotes: [ "等一下，博士！你这表情可不像要买东西的样子，你想干嘛？", "你的行为很可疑哦！", "喂喂！博士你的手刚才动了一下！" ],
+      actions: {
+        affirm: { normal: [ "打了个响指：“不愧是博士，太有眼光了！”" ], light: [ "困倦地眯着眼笑：“嘿嘿……博士同意就好……”" ], heavy: [ "耷拉着小耳朵：“……嗯……打钱……都听博士的……”" ] },
+        deny: { normal: [ "推了推眼镜：“既然博士觉得不划算，那我就按你说的改！”" ], light: [ "揉着眼睛：“唔……博士你说得有道理……”" ], heavy: [ "无精打采：“……知道了知道了……听你的改……”" ] },
+        tease: { normal: [ "双手叉腰：“我可是店长!别想占我便宜！”" ], light: [ "红着脸打了哈欠：“哼，我只是有点缺糖分！”" ], heavy: [ "含糊嘀咕：“……坏博士……不许偷笑我……呼……”" ] },
+        topic: { normal: [ "兴致勃勃：“说起来，博士，要不要听听工程部的新进货计划？”" ], light: [ "昏昏欲睡：“聊工作?……博士,卖洗发水有市场吗……”" ], heavy: [ "梦呓：“……全场八折……博士……买一送一……”" ] }
+      }
+    },
+    {
+      id: 3, name: "Mon3tr", avatarIcon: "🦎", desc: "活泼的助手. 收到通知后来到了你的办公室。", locked: false,
+      initialSleepiness: 0, initialSuspicion: 20, initialFavor: 80,
+      asleepQuotes: [ "（趴在沙发上发出软绵的呼噜声）", "（小尾巴不自觉地微弱摆动了一下，沉沉睡去）" ],
+      itemQuotes: [ "唔？好香的气味啊……感觉眼睛酸酸的……", "博士拿出来的是好吃的吗？咕噜……好想睡觉……", "身体变得软绵绵的……想直接趴下来……" ],
+      itemFailQuotes: [ 
+        "（警惕地竖起耳朵）博士,你的手刚才在摸什么呢？", 
+        "唔……博士刚才是不是扔了什么东西？", 
+        "博士，你是不是想偷拿我的零食！",
+        "“嘶……总感觉博士刚才的动作怪怪的，失效了吗？”"
+      ],
+      suspicionFailQuotes: [ "博士你怎么怪怪的？感觉你好像在隐瞒什么危险的事情！", "直勾勾地看着我……博士肯定没安好心！" ],
+      sleepStageQuotes: {
+        normal: [ "博士！你找我呀！是有好吃的还是有好玩的？", "办公室沙发好软！我可以趴在这里玩一会儿吗？" ],
+        light: [ "呜……坐在沙发上摇摇晃晃的，脑袋怎么忽然晕乎乎的……", "博士……我是不是太累了……眼睛有点睁不开了……" ],
+        heavy: [ "不……不能睡……呼……还没帮博士整理完文件呢……", "尾巴……好沉……好想缩成一团睡一觉……" ]
+      },
+      suspiciousQuotes: [ "唔……博士眼神直勾勾的，是不是想趁我不注意偷拿我的零食？", "博士你怎么怪怪的？感觉你好像在隐瞒什么危险的事情！", "（警惕地竖起耳朵）博士,你的手刚才在摸什么呢？" ],
+      actions: {
+        affirm: { normal: [ "高兴地跳了起来：“耶！我就知道博士最好了！”" ], light: [ "眨眨大眼睛：“嘿嘿～博士真好!好想抱抱你～”" ], heavy: [ "发出一声舒服的咕噜声：“……嗯……博士最好啦……”" ] },
+        deny: { normal: [ "歪了歪头：“原来不行呀……好吧！听博士的！”" ], light: [ "揉了揉眼睛：“知道啦……听博士的话，我不闹啦……”" ], heavy: [ "困得点点头：“唔……听话……睡觉觉……”" ] },
+        tease: { normal: [ "扮了个鬼脸：“哼！看我不扑过去抓你！”" ], light: [ "揉着通红的小脸：“坏博士!笑人家坐在沙发上发呆！”" ], heavy: [ "吐了吐小舌头，哼唧着趴在沙发上睡着了." ] },
+        topic: { normal: [ "凑过来：“博士，是不是偷藏了什么好吃的零食？快拿出来！”" ], light: [ "晃晃悠悠：“聊工作?……博士,有没有小甜饼干呀……”" ], heavy: [ "梦呓着：“……追到了……大蝴蝶……嘿嘿……好大一只……”" ] }
+      }
+    }
+  ];
+
+  let selectedCharId = 1;
+
+  // 动态计算当前道具成功率的算法函数 (保留原有基础+好感度-怀疑逻辑，并增加当前睡意数值的 50%，最高限制为 100%)
+  function calculateItemSuccessRate() {
+    let rate = 50 + (favorVal * 0.5) - suspicionVal + (sleepinessVal * 0.5);
+    return Math.max(0, Math.min(100, Math.round(rate)));
+  }
+
+  function getRandomElement(arr) {
+    if (!arr || arr.length === 0) return "";
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function tryLoadImage(url, callback) {
+    if (!url) { callback(false); return; }
+    const img = new Image();
+    img.onload = () => callback(true, url);
+    img.onerror = () => callback(false, null);
+    img.src = url;
+  }
+
+  function getSleepStage() {
+    if (sleepinessVal >= 200) return 'asleep';
+    if (sleepinessVal < 100) return 'normal';
+    if (sleepinessVal < 160) return 'light';
+    return 'heavy';
+  }
+
+  function getSleepStageBadgeText(stage) {
+    if (sleepinessVal >= 200) return '沉睡';
+    if (sleepinessVal >= 190) return '重度';
+    if (sleepinessVal >= 160) return '重度';
+    if (sleepinessVal >= 130) return '轻度';
+    if (sleepinessVal >= 100) return '轻度';
+    return '普通';
+  }
+
+  function renderCharacterList() {
+    const container = document.getElementById('character-list');
+    const galleryContainer = document.getElementById('gallery-list');
+    container.innerHTML = '';
+    galleryContainer.innerHTML = '';
+
+    characters.forEach(char => {
+      const isSelected = char.id === selectedCharId;
+      const avatarPath = IMAGE_CONFIG[char.id] ? IMAGE_CONFIG[char.id].avatar : null;
+      
+      const card = document.createElement('div');
+      card.className = `card ${isSelected ? 'char-card-selected' : ''} ${char.locked ? 'locked-card' : ''}`;
+      
+      const avatarDivId = `avatar-el-${char.id}`;
+      card.innerHTML = `
+        <div class="visitor-avatar" id="${avatarDivId}">${char.avatarIcon}</div>
+        <div style="flex: 1;">
+          <div style="font-weight: bold; font-size: 16px;">${char.name} ${char.locked ? '<span style="font-size:12px; color:#ef4444;">[未开放]</span>' : ''}</div>
+          <div style="font-size: 11px; color: var(--text-sub); margin-top: 4px;">${char.desc}</div>
+          <div style="font-size: 10px; color: #38bdf8; margin-top: 2px;">
+            初始: 睡意${char.initialSleepiness} | 怀疑${char.initialSuspicion}% | 信赖${char.initialFavor}%
+          </div>
+        </div>
+        <button class="select-btn ${isSelected ? 'active' : ''}" ${char.locked ? 'disabled' : ''} onclick="selectCharacter(${char.id})">
+          ${char.locked ? '锁定' : (isSelected ? '已选择' : '召集')}
+        </button>
+      `;
+      container.appendChild(card);
+
+      const gCard = document.createElement('div');
+      gCard.className = `card ${char.locked ? 'locked-card' : ''}`;
+      const gAvatarId = `g-avatar-el-${char.id}`;
+      gCard.innerHTML = `
+        <div class="visitor-avatar" id="${gAvatarId}">${char.avatarIcon}</div>
+        <div>
+          <div style="font-weight: bold;">${char.name} ${char.locked ? '<span style="font-size:12px; color:#ef4444;">[未开放]</span>' : ''}</div>
+          <div style="font-size: 12px; color: var(--text-sub); margin-top: 2px;">${char.desc}</div>
+        </div>
+      `;
+      galleryContainer.appendChild(gCard);
+
+      tryLoadImage(avatarPath, (success, path) => {
+        if (success) {
+          const el1 = document.getElementById(avatarDivId);
+          const el2 = document.getElementById(gAvatarId);
+          if (el1) { el1.style.backgroundImage = `url('${path}')`; el1.innerText = ''; }
+          if (el2) { el2.style.backgroundImage = `url('${path}')`; el2.innerText = ''; }
+        }
+      });
+    });
+  }
+
+  function selectCharacter(id) {
+    const char = characters.find(c => c.id === id);
+    if (char && char.locked) return;
+    selectedCharId = id;
+    renderCharacterList();
+  }
+
+  // 疗养院小店商品设定
+  const shopItems = [
+    { id: 1, icon: '🧪', name: '安眠药', text: '后续每次交互额外+10睡意', price: 0, tickAdd: 10, suspAdd: 10 },
+    { id: 2, icon: '🎯', name: '麻醉镖', text: '后续每次交互额外+30睡意', price: 500, tickAdd: 30, suspAdd: 25 },
+    { id: 3, icon: '🧴', name: '不可疑的熏香', text: '后续每次交互额外+10睡意', price: 1000, tickAdd: 10, suspAdd: -30 }
+  ];
+
+  function switchTab(tabName, btnElement) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`page-${tabName}`).classList.add('active');
+    btnElement.classList.add('active');
+    
+    // 切换到小店或配置时刷新显示，以便同步当前的睡意加成数值
+    if (tabName === 'shop') renderShop();
+    if (tabName === 'config') renderConfig();
+  }
+
+  function renderShop() {
+    const container = document.getElementById('shop-list');
+    const shopPage = document.getElementById('page-shop');
+    
+    tryLoadImage(SHOP_BG_PATH, (success, path) => {
+      if (success) {
+        shopPage.style.backgroundImage = `url('${path}')`;
+      }
+    });
+
+    container.innerHTML = '';
+    shopItems.forEach(item => {
+      const isBought = inventory.includes(item.id);
+      const canAfford = coins >= item.price;
+      const currentDynamicRate = calculateItemSuccessRate();
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="shop-item-icon">${item.icon}</div>
+        <div style="flex: 1; font-size: 13px;">${item.name} <span style="font-size:11px; color:#38bdf8;">(${currentDynamicRate}%)</span><br><span style="font-size:11px; color:var(--text-sub);">${item.text}</span></div>
+        <button class="buy-btn" ${isBought || !canAfford ? 'disabled' : ''} onclick="buyItem(${item.id})">
+          ${isBought ? '已解锁' : `C ${item.price}`}
+        </button>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function buyItem(id) {
+    const item = shopItems.find(i => i.id === id);
+    if (item && !inventory.includes(id) && coins >= item.price) {
+      coins -= item.price;
+      inventory.push(id);
+      document.getElementById('coin-count').innerText = coins;
+      renderShop();
+      renderConfig();
+      renderQuickItemsBar();
+    }
+  }
+
+  function renderConfig() {
+    const container = document.getElementById('equipped-list');
+    if (inventory.length === 0) {
+      container.innerHTML = `<div style="color: var(--text-sub); text-align: center; margin-top: 30px;">未配置任何辅助道具</div>`;
+      return;
+    }
+    container.innerHTML = '';
+    inventory.forEach(id => {
+      const item = shopItems.find(x => x.id === id);
+      const currentDynamicRate = calculateItemSuccessRate();
+      container.innerHTML += `
+        <div class="card">
+          <div class="shop-item-icon">${item.icon}</div>
+          <div style="font-size: 13px; color: #4ade80;">[已解锁] ${item.name} <span style="font-size:11px; color:#38bdf8;">(${currentDynamicRate}%成功率)</span></div>
+        </div>
+      `;
+    });
+  }
+
+  function refreshDialogueTextForCurrentEvent() {
+    const char = characters.find(c => c.id === selectedCharId);
+    if (!char) return;
+
+    const currentStage = getSleepStage();
+
+    if (currentStage === 'asleep') {
+      document.getElementById('dialogue-text').innerText = getRandomAsleepQuote(char);
+      return;
+    }
+
+    if (!lastEvent) {
+      if (isSuspiciousNow) {
+        document.getElementById('dialogue-text').innerText = getRandomElement(char.suspiciousQuotes);
+      } else {
+        const quotesList = (sleepinessVal > 130 && char.sleepStageQuotes['heavy']) ? char.sleepStageQuotes['heavy'] : (char.sleepStageQuotes[currentStage] || char.sleepStageQuotes['normal']);
+        document.getElementById('dialogue-text').innerText = getRandomElement(quotesList);
+      }
+      return;
+    }
+
+    let nextText = "";
+
+    if (lastEvent.type === 'item') {
+      if (lastEvent.success) {
+        nextText = getRandomElement(char.itemQuotes || ["……"]);
+      } else {
+        nextText = getRandomElement(char.itemFailQuotes || ["……？"]);
+      }
+    } else if (lastEvent.type === 'action') {
+      const actType = lastEvent.detail;
+      if (isSuspiciousNow && actType !== 'deny') {
+        const susFailQuotes = char.suspicionFailQuotes;
+        nextText = Array.isArray(susFailQuotes) ? getRandomElement(susFailQuotes) : "……？";
+      } else {
+        const stageActionQuotes = (sleepinessVal > 130 && char.actions[actType]['heavy']) ? char.actions[actType]['heavy'] : (char.actions[actType][currentStage] || char.actions[actType]['normal']);
+        nextText = Array.isArray(stageActionQuotes) ? getRandomElement(stageActionQuotes) : stageActionQuotes;
+      }
+    } else if (lastEvent.type === 'dialogue') {
+      if (isSuspiciousNow) {
+        nextText = getRandomElement(char.suspiciousQuotes);
+      } else {
+        const quotesList = (sleepinessVal > 130 && char.sleepStageQuotes['heavy']) ? char.sleepStageQuotes['heavy'] : (char.sleepStageQuotes[currentStage] || char.sleepStageQuotes['normal']);
+        nextText = getRandomElement(quotesList);
+      }
+    }
+
+    if (nextText) {
+      document.getElementById('dialogue-text').innerText = nextText;
+    }
+  }
+
+  function triggerCoolDown() {
+    isCoolingDown = true;
+    if (coolDownTimer) clearTimeout(coolDownTimer);
+
+    document.getElementById('quick-items-bar').classList.add('disabled-controls');
+    document.getElementById('right-actions-bar').classList.add('disabled-controls');
+    document.getElementById('dialogue-box-el').classList.add('disabled-dialogue');
+
+    coolDownTimer = setTimeout(() => {
+      isCoolingDown = false;
+      document.getElementById('quick-items-bar').classList.remove('disabled-controls');
+      document.getElementById('right-actions-bar').classList.remove('disabled-controls');
+      document.getElementById('dialogue-box-el').classList.remove('disabled-dialogue');
+
+      refreshDialogueTextForCurrentEvent();
+    }, COOL_DOWN_TIME);
+  }
+
+  function startInteraction() {
+    const char = characters.find(c => c.id === selectedCharId);
+    if (!char || char.locked) return;
+
+    sleepinessVal = char.initialSleepiness || 0;
+    suspicionVal = char.initialSuspicion || 0;
+    favorVal = char.initialFavor || 90;
+    
+    isRewardClaimed = false;
+    activeSleepinessBuff = 0;
+    isSuspiciousNow = false;
+    isCoolingDown = false;
+    lastEvent = null;
+    
+    resetTempBgState();
+    
+    checkSuspicionTrigger();
+    updateStatusDisplay();
+
+    document.getElementById('speaker-name-display').innerText = char.name;
+
+    renderQuickItemsBar();
+
+    triggerSleepStageDialogue(true);
+    document.getElementById('interaction-screen').style.display = 'flex';
+  }
+
+  function renderQuickItemsBar() {
+    const quickBar = document.getElementById('quick-items-bar');
+    quickBar.innerHTML = '';
+
+    const currentDynamicRate = calculateItemSuccessRate();
+
+    shopItems.forEach(item => {
+      const isUnlocked = inventory.includes(item.id);
+      if (isUnlocked) {
+        quickBar.innerHTML += `
+          <div class="item-slot" onclick="useItem(${item.id})">
+            <span>${item.icon}</span>
+            <span class="item-slot-name">${item.name}</span>
+            <span class="item-slot-rate">${currentDynamicRate}%</span>
+          </div>
+        `;
+      } else {
+        quickBar.innerHTML += `
+          <div class="item-slot locked" title="需在疗养院小店解锁">
+            <span>🔒</span>
+            <span class="item-slot-name">${item.name}</span>
+          </div>
+        `;
+      }
+    });
+  }
+
+  function checkSuspicionTrigger() {
+    if (sleepinessVal >= 100 || getSleepStage() === 'asleep') {
+      isSuspiciousNow = false;
+      return;
+    }
+    const rand = Math.random() * 100;
+    isSuspiciousNow = rand < suspicionVal;
+  }
+
+  function updateBackgroundForStage(stage) {
+    const charId = selectedCharId;
+    const charConfig = IMAGE_CONFIG[charId];
+    if (!charConfig) return;
+
+    const screen = document.getElementById('interaction-screen');
+
+    if (isSuspiciousNow && stage !== 'asleep') {
+      const susType = suspicionVal < 50 ? 'low' : 'high';
+      const susBgPath = charConfig.suspicion ? charConfig.suspicion[susType] : null;
+
+      tryLoadImage(susBgPath, (success, path) => {
+        if (success) {
+          screen.style.backgroundImage = `url('${path}')`;
+        } else {
+          fallbackNormalStageBg();
+        }
+      });
+      return;
+    }
+
+    fallbackNormalStageBg();
+
+    function fallbackNormalStageBg() {
+      if (!charConfig.stages) return;
+      const startIndex = stageHierarchy.indexOf(stage);
+      const candidateStages = stageHierarchy.slice(startIndex >= 0 ? startIndex : 0);
+
+      function checkAndApplyStageBg(index) {
+        if (index >= candidateStages.length) {
+          screen.style.backgroundImage = 'none';
+          return;
+        }
+
+        const st = candidateStages[index];
+        const targetBg = charConfig.stages[st];
+
+        tryLoadImage(targetBg, (success, path) => {
+          if (success) {
+            screen.style.backgroundImage = `url('${path}')`;
+          } else {
+            checkAndApplyStageBg(index + 1);
+          }
+        });
+      }
+
+      checkAndApplyStageBg(0);
+    }
+  }
+
+  function triggerTempBgAnimation(bgPath, duration = 3000) {
+    if (!bgPath) return;
+
+    if (tempBgTimer) {
+      clearTimeout(tempBgTimer);
+      tempBgTimer = null;
+    }
+
+    const screen = document.getElementById('interaction-screen');
+
+    tryLoadImage(bgPath, (success, path) => {
+      if (success) {
+        screen.style.backgroundImage = `url('${path}')`;
+        isShowingTempBg = true;
+
+        tempBgTimer = setTimeout(() => {
+          isShowingTempBg = false;
+          tempBgTimer = null;
+          updateStatusDisplay();
+        }, duration);
+      } else {
+        isShowingTempBg = false;
+        updateBackgroundForStage(getSleepStage());
+      }
+    });
+  }
+
+  function triggerItemAnimation(itemId) {
+    const charId = selectedCharId;
+    const charConfig = IMAGE_CONFIG[charId];
+    if (!charConfig || !charConfig.items) return;
+
+    const itemBgPath = charConfig.items[itemId];
+    triggerTempBgAnimation(itemBgPath, 3000);
+  }
+
+  function triggerItemFailAnimation(itemId) {
+    const charId = selectedCharId;
+    const charConfig = IMAGE_CONFIG[charId];
+    if (!charConfig || !charConfig.itemFails) return;
+
+    const failBgPath = charConfig.itemFails[itemId];
+    triggerTempBgAnimation(failBgPath, 3000);
+  }
+
+  function triggerActionAnimation(actionType) {
+    if (sleepinessVal >= 130) return;
+    const charId = selectedCharId;
+    const charConfig = IMAGE_CONFIG[charId];
+    if (!charConfig || !charConfig.actions) return;
+
+    const actionBgPath = charConfig.actions[actionType];
+    triggerTempBgAnimation(actionBgPath, 3000);
+  }
+
+  function resetTempBgState() {
+    if (tempBgTimer) {
+      clearTimeout(tempBgTimer);
+      tempBgTimer = null;
+    }
+    if (coolDownTimer) {
+      clearTimeout(coolDownTimer);
+      coolDownTimer = null;
+    }
+    isShowingTempBg = false;
+    isCoolingDown = false;
+
+    document.getElementById('quick-items-bar').classList.remove('disabled-controls');
+    document.getElementById('right-actions-bar').classList.remove('disabled-controls');
+    document.getElementById('dialogue-box-el').classList.remove('disabled-dialogue');
+  }
+
+  function getRandomAsleepQuote(char) {
+    return getRandomElement(char.asleepQuotes || ["……"]);
+  }
+
+  function triggerSleepStageDialogue(isInitial = false) {
+    if (isCoolingDown && !isInitial) return;
+
+    const char = characters.find(c => c.id === selectedCharId);
+    if (!char) return;
+
+    lastEvent = { type: 'dialogue', detail: 'click', success: true };
+
+    if (!isInitial) triggerCoolDown();
+
+    processInteractionIncrease();
+
+    const stage = getSleepStage();
+
+    if (stage === 'asleep') {
+      document.getElementById('dialogue-text').innerText = getRandomAsleepQuote(char);
+    } else if (isSuspiciousNow) {
+      document.getElementById('dialogue-text').innerText = getRandomElement(char.suspiciousQuotes);
+    } else {
+      const quotesList = (sleepinessVal > 130 && char.sleepStageQuotes['heavy']) ? char.sleepStageQuotes['heavy'] : (char.sleepStageQuotes[stage] || char.sleepStageQuotes['normal']);
+      document.getElementById('dialogue-text').innerText = getRandomElement(quotesList);
+    }
+  }
+
+  function processInteractionIncrease() {
+    if (activeSleepinessBuff > 0 && sleepinessVal < MAX_SLEEPINESS) {
+      sleepinessVal = Math.min(MAX_SLEEPINESS, sleepinessVal + activeSleepinessBuff);
+    }
+    
+    if (sleepinessVal >= 100) {
+      suspicionVal = Math.max(0, suspicionVal - 5);
+    }
+
+    updateStatusDisplay();
+    checkGameState();
+  }
+
+  function useItem(itemId) {
+    if (isCoolingDown) return;
+    if (!inventory.includes(itemId)) return;
+
+    const char = characters.find(c => c.id === selectedCharId);
+    const item = shopItems.find(x => x.id === itemId);
+    if (!item || !char) return;
+
+    const currentDynamicRate = calculateItemSuccessRate();
+    const isItemSuccess = (Math.random() * 100) <= currentDynamicRate;
+    
+    lastEvent = { type: 'item', detail: itemId, success: isItemSuccess };
+
+    triggerCoolDown();
+
+    if (getSleepStage() === 'asleep') {
+      document.getElementById('dialogue-text').innerText = getRandomAsleepQuote(char);
+      updateStatusDisplay();
+      return;
+    }
+
+    if (isItemSuccess) {
+      triggerItemAnimation(itemId);
+
+      if (sleepinessVal < 100) {
+        suspicionVal = Math.max(0, Math.min(100, suspicionVal + 10 + item.suspAdd));
+      } else {
+        suspicionVal = Math.max(0, suspicionVal - 5);
+      }
+      activeSleepinessBuff += item.tickAdd;
+
+      checkSuspicionTrigger();
+
+      if (getSleepStage() === 'asleep') {
+        document.getElementById('dialogue-text').innerText = getRandomAsleepQuote(char);
+      } else {
+        document.getElementById('dialogue-text').innerText = getRandomElement(char.itemQuotes || ["……"]);
+      }
+    } else {
+      triggerItemFailAnimation(itemId);
+
+      if (sleepinessVal < 100) {
+        suspicionVal = Math.max(0, Math.min(100, suspicionVal + 8));
+      } else {
+        suspicionVal = Math.max(0, suspicionVal - 5);
+      }
+      checkSuspicionTrigger();
+
+      if (isSuspiciousNow && char.suspicionFailQuotes) {
+        document.getElementById('dialogue-text').innerText = getRandomElement(char.suspicionFailQuotes);
+      } else {
+        document.getElementById('dialogue-text').innerText = getRandomElement(char.itemFailQuotes || ["……？"]);
+      }
+    }
+
+    updateStatusDisplay();
+    checkGameState();
+  }
+
+  function handleDialogue(type) {
+    if (isCoolingDown) return;
+
+    const char = characters.find(c => c.id === selectedCharId);
+
+    lastEvent = { type: 'action', detail: type, success: true };
+
+    triggerCoolDown();
+
+    if (getSleepStage() === 'asleep') {
+      document.getElementById('dialogue-text').innerText = getRandomAsleepQuote(char);
+      updateStatusDisplay();
+      return;
+    }
+
+    triggerActionAnimation(type);
+
+    let replyText = "";
+    let sDelta = 10;
+    const currentStage = getSleepStage();
+
+    if (isSuspiciousNow) {
+      if (type === 'deny') {
+        sDelta = -20; 
+        isSuspiciousNow = false; 
+        const denyQuotes = (sleepinessVal > 130 && char.actions.deny['heavy']) ? char.actions.deny['heavy'] : char.actions.deny[currentStage];
+        replyText = Array.isArray(denyQuotes) ? getRandomElement(denyQuotes) : denyQuotes;
+      } else {
+        sDelta = 25; 
+        const susFailQuotes = char.suspicionFailQuotes;
+        replyText = Array.isArray(susFailQuotes) ? getRandomElement(susFailQuotes) : "……？";
+      }
+    } else {
+      const stageActionQuotes = (sleepinessVal > 130 && char.actions[type]['heavy']) ? char.actions[type]['heavy'] : (char.actions[type][currentStage] || char.actions[type]['normal']);
+      replyText = Array.isArray(stageActionQuotes) ? getRandomElement(stageActionQuotes) : stageActionQuotes;
+
+      if (type === 'deny') sDelta = 5;
+      else if (type === 'affirm') sDelta = 10;
+      else if (type === 'tease') sDelta = 12;
+      else if (type === 'topic') sDelta = 8;
+    }
+
+    if (sleepinessVal < 100) {
+      suspicionVal = Math.min(100, Math.max(0, suspicionVal + sDelta));
+    } else {
+      suspicionVal = Math.max(0, suspicionVal - 5);
+    }
+
+    processInteractionIncrease();
+
+    if (sleepinessVal < 100 && (type !== 'deny' || isSuspiciousNow)) {
+      checkSuspicionTrigger();
+    }
+
+    const stage = getSleepStage();
+    if (stage === 'asleep') {
+      replyText = getRandomAsleepQuote(char);
+    }
+
+    document.getElementById('dialogue-text').innerText = replyText;
+
+    checkGameState();
+  }
+
+  function updateStatusDisplay() {
+    let displaySleep = Math.round(sleepinessVal);
+    document.getElementById('val-sleepiness').innerText = displaySleep + '/' + MAX_SLEEPINESS;
+    document.getElementById('bar-sleepiness').style.width = (displaySleep / MAX_SLEEPINESS * 100) + '%';
+
+    document.getElementById('val-suspicion').innerText = suspicionVal + '%';
+    document.getElementById('bar-suspicion').style.width = suspicionVal + '%';
+
+    document.getElementById('val-favor').innerText = favorVal + '%';
+    document.getElementById('bar-favor').style.width = favorVal + '%';
+
+    renderQuickItemsBar();
+
+    const bedroomBtn = document.getElementById('bedroom-btn-el');
+    if (sleepinessVal >= MAX_SLEEPINESS) {
+      bedroomBtn.style.display = 'block';
+    } else {
+      bedroomBtn.style.display = 'none';
+    }
+
+    if (!isShowingTempBg) {
+      const stage = getSleepStage();
+      const badgeEl = document.getElementById('speaker-status-badge');
+      badgeEl.innerText = getSleepStageBadgeText(stage);
+
+      if (sleepinessVal < 100) badgeEl.style.color = '#38bdf8';
+      else if (sleepinessVal < 160) badgeEl.style.color = '#facc15';
+      else if (sleepinessVal < 200) badgeEl.style.color = '#f43f5e';
+      else badgeEl.style.color = '#e11d48';
+
+      updateBackgroundForStage(stage);
+    }
+  }
+
+  function moveToBedroom() {
+    if (!isRewardClaimed) {
+      coins += 250;
+      document.getElementById('coin-count').innerText = coins;
+      isRewardClaimed = true;
+    }
+    exitInteraction();
+  }
+
+  function checkGameState() {
+    const char = characters.find(c => c.id === selectedCharId);
+    if (suspicionVal >= 100) {
+      setTimeout(() => {
+        alert(`【干员离开】${char.name}起身离开了博士办公室！`);
+        exitInteraction();
+      }, 300);
+    }
+  }
+
+  function exitInteraction() {
+    resetTempBgState();
+    document.getElementById('interaction-screen').style.display = 'none';
+  }
+
+  renderCharacterList();
+  renderShop();
+  renderConfig();
+</script>
+
+</body>
+</html>
